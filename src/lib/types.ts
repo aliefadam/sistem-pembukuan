@@ -16,6 +16,8 @@ export interface Transaction {
   categoryName: string;
   amount: number;
   description: string;
+  sourceType?: "stock_out" | "payroll";
+  sourceId?: string;
   createdAt: string;
 }
 

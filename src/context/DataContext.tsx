@@ -360,17 +360,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addStockOut: (data) => {
         const product = products.find((p) => p.id === data.productId);
         const no = generateNo("SOUT", stockOut.length + 1);
+        const stockOutId = generateId();
         setStockOut((prev) => [
-          { ...data, id: generateId(), no, productName: product?.name || "-", createdAt: new Date().toISOString() },
+          { ...data, id: stockOutId, no, productName: product?.name || "-", createdAt: new Date().toISOString() },
           ...prev,
         ]);
         setProducts((prev) => prev.map((p) => (p.id === data.productId ? { ...p, stock: Math.max(0, p.stock - data.qty) } : p)));
+        const category = categories.find((c) => c.type === "income" && c.name === "Penjualan") || categories.find((c) => c.type === "income");
+        const incomeNo = generateNo("INC", income.length + 1);
+        setIncome((prev) => [
+          {
+            id: generateId(), no: incomeNo, type: "income", date: data.date,
+            categoryId: category?.id || "auto-penjualan", categoryName: category?.name || "Penjualan",
+            amount: (product?.sellPrice || 0) * data.qty,
+            description: `Penjualan otomatis ${data.qty} ${product?.unit || "unit"} ${product?.name || "barang"} (${no})`,
+            sourceType: "stock_out", sourceId: stockOutId, createdAt: new Date().toISOString(),
+          },
+          ...prev,
+        ]);
         addLog("Tambah", "Barang Keluar", no);
       },
       deleteStockOut: (id) => {
         const item = stockOut.find((s) => s.id === id);
         if (item) setProducts((prev) => prev.map((p) => (p.id === item.productId ? { ...p, stock: p.stock + item.qty } : p)));
         setStockOut((prev) => prev.filter((s) => s.id !== id));
+        setIncome((prev) => prev.filter((t) => !(t.sourceType === "stock_out" && t.sourceId === id)));
         addLog("Hapus", "Barang Keluar", id);
       },
 
@@ -410,25 +424,50 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addPayroll: (data) => {
         const employee = employees.find((e) => e.id === data.employeeId);
         const total = data.baseSalary + data.bonus + data.overtime - data.deduction;
+        const payrollId = generateId();
         setPayroll((prev) => [
-          { ...data, id: generateId(), total, employeeName: employee?.name || "-", createdAt: new Date().toISOString() },
+          { ...data, id: payrollId, total, employeeName: employee?.name || "-", createdAt: new Date().toISOString() },
           ...prev,
         ]);
+        if (data.status === "paid") {
+          const category = categories.find((c) => c.type === "expense" && c.name === "Gaji") || categories.find((c) => c.type === "expense");
+          setExpense((prev) => [{
+            id: generateId(), no: generateNo("EXP", expense.length + 1), type: "expense", date: todayISO(),
+            categoryId: category?.id || "auto-gaji", categoryName: category?.name || "Gaji", amount: total,
+            description: `Pembayaran gaji ${employee?.name || "-"} periode ${data.month}`,
+            sourceType: "payroll", sourceId: payrollId, createdAt: new Date().toISOString(),
+          }, ...prev]);
+        }
         addLog("Tambah", "Payroll", employee?.name || "-");
       },
       updatePayroll: (id, data) => {
-        setPayroll((prev) =>
-          prev.map((p) => {
-            if (p.id !== id) return p;
-            const merged = { ...p, ...data };
-            merged.total = merged.baseSalary + merged.bonus + merged.overtime - merged.deduction;
-            return merged;
-          }),
-        );
+        const current = payroll.find((p) => p.id === id);
+        if (!current) return;
+        const merged = { ...current, ...data };
+        merged.total = merged.baseSalary + merged.bonus + merged.overtime - merged.deduction;
+        const employee = employees.find((e) => e.id === merged.employeeId);
+        merged.employeeName = employee?.name || merged.employeeName;
+        setPayroll((prev) => prev.map((p) => (p.id === id ? merged : p)));
+        if (merged.status === "paid") {
+          const category = categories.find((c) => c.type === "expense" && c.name === "Gaji") || categories.find((c) => c.type === "expense");
+          setExpense((prev) => {
+            const linked = prev.find((t) => t.sourceType === "payroll" && t.sourceId === id);
+            const details = {
+              date: linked?.date || todayISO(), categoryId: category?.id || "auto-gaji", categoryName: category?.name || "Gaji",
+              amount: merged.total, description: `Pembayaran gaji ${merged.employeeName} periode ${merged.month}`,
+            };
+            return linked
+              ? prev.map((t) => (t.id === linked.id ? { ...t, ...details } : t))
+              : [{ id: generateId(), no: generateNo("EXP", prev.length + 1), type: "expense" as const, ...details, sourceType: "payroll" as const, sourceId: id, createdAt: new Date().toISOString() }, ...prev];
+          });
+        } else {
+          setExpense((prev) => prev.filter((t) => !(t.sourceType === "payroll" && t.sourceId === id)));
+        }
         addLog("Edit", "Payroll", id);
       },
       deletePayroll: (id) => {
         setPayroll((prev) => prev.filter((p) => p.id !== id));
+        setExpense((prev) => prev.filter((t) => !(t.sourceType === "payroll" && t.sourceId === id)));
         addLog("Hapus", "Payroll", id);
       },
 

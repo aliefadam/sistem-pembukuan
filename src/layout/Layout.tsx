@@ -1,5 +1,5 @@
-import { ReactNode, useEffect, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { ReactNode, useEffect, useMemo, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../utils/cn";
 import { useTheme } from "../context/ThemeContext";
 import { useData } from "../context/DataContext";
@@ -65,6 +65,12 @@ const MENU: MenuItem[] = [
     ],
   },
 ];
+
+const SEARCHABLE_MENU = MENU.flatMap((item) =>
+  item.children
+    ? item.children.map((child) => ({ ...child, group: item.label }))
+    : item.path ? [{ label: item.label, path: item.path, icon: item.icon, group: "Utama" }] : [],
+);
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { settings } = useData();
@@ -185,11 +191,51 @@ export function MainLayout({ children }: { children: ReactNode }) {
   const { dark, toggle } = useTheme();
   const { currentRole, settings } = useData();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileClosing, setMobileClosing] = useState(false);
+  const [menuSearchOpen, setMenuSearchOpen] = useState(false);
+  const [menuQuery, setMenuQuery] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const menuResults = useMemo(() => {
+    const query = menuQuery.trim().toLowerCase();
+    if (!query) return SEARCHABLE_MENU;
+    return SEARCHABLE_MENU.filter((item) => `${item.label} ${item.group}`.toLowerCase().includes(query));
+  }, [menuQuery]);
+
+  function openMenuSearch() {
+    setMenuQuery("");
+    setMenuSearchOpen(true);
+  }
+
+  function selectMenu(path: string) {
+    setMenuSearchOpen(false);
+    navigate(path);
+  }
+
+  function openMobileDrawer() {
+    setMobileClosing(false);
+    setMobileOpen(true);
+  }
+
+  function closeMobileDrawer() {
+    if (mobileOpen) setMobileClosing(true);
+  }
 
   useEffect(() => {
-    setMobileOpen(false);
+    if (mobileOpen) setMobileClosing(true);
+    // Drawer is removed after its slide-down animation finishes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuSearchOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuSearchOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [menuSearchOpen]);
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -201,23 +247,82 @@ export function MainLayout({ children }: { children: ReactNode }) {
       {/* Mobile Sidebar Drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[90] lg:hidden">
-          <div className="animate-fade-in absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="animate-slide-in-right absolute left-0 top-0 h-full w-72 bg-white shadow-2xl dark:bg-slate-900">
-            <SidebarContent onNavigate={() => setMobileOpen(false)} />
+          <div className={cn("absolute inset-0 bg-slate-900/50 backdrop-blur-sm", mobileClosing ? "animate-fade-out" : "animate-fade-in")} onClick={closeMobileDrawer} />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu navigasi"
+            onAnimationEnd={(event) => {
+              if (event.target !== event.currentTarget) return;
+              if (mobileClosing) {
+                setMobileOpen(false);
+                setMobileClosing(false);
+              }
+            }}
+            className={cn(
+              "absolute left-0 top-0 h-full w-72 overflow-hidden bg-white shadow-2xl dark:bg-slate-900",
+              mobileClosing ? "animate-slide-out-left" : "animate-slide-in-left",
+            )}
+          >
+            <SidebarContent onNavigate={closeMobileDrawer} />
           </div>
         </div>
       )}
 
-      <div className="flex min-h-screen flex-1 flex-col">
+      {menuSearchOpen && (
+        <div className="fixed inset-0 z-[100]">
+          <button className="animate-fade-in absolute inset-0 h-full w-full bg-slate-900/35 backdrop-blur-sm" onClick={() => setMenuSearchOpen(false)} aria-label="Tutup pencarian menu" />
+          <div role="dialog" aria-modal="true" aria-label="Cari menu" className="animate-fade-in-up absolute left-4 right-4 top-20 mx-auto max-w-lg overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:top-24">
+            <div className="flex items-center gap-3 border-b border-slate-100 px-4 dark:border-slate-800">
+              <i className="fi fi-rr-search text-slate-400" />
+              <input
+                autoFocus
+                value={menuQuery}
+                onChange={(event) => setMenuQuery(event.target.value)}
+                placeholder="Cari halaman atau menu..."
+                className="h-14 min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 dark:text-slate-200"
+              />
+              <button onClick={() => setMenuSearchOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Tutup">
+                <i className="fi fi-rr-cross-small" />
+              </button>
+            </div>
+            <div className="max-h-[min(60dvh,28rem)] overflow-y-auto p-2">
+              {menuResults.length > 0 ? menuResults.map((item) => (
+                <button key={item.path} onClick={() => selectMenu(item.path)} className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-blue-50 dark:hover:bg-blue-500/10">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600 dark:bg-slate-800 dark:text-slate-300 dark:group-hover:bg-blue-500/15 dark:group-hover:text-blue-400">
+                    <i className={item.icon} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{item.label}</span>
+                    <span className="block text-xs text-slate-400">{item.group}</span>
+                  </span>
+                  <i className="fi fi-rr-angle-small-right text-xs text-slate-300 group-hover:text-blue-500" />
+                </button>
+              )) : (
+                <div className="px-4 py-10 text-center">
+                  <i className="fi fi-rr-search mb-2 text-xl text-slate-300" />
+                  <p className="text-sm font-medium text-slate-500">Menu tidak ditemukan</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-slate-100 bg-white/80 px-4 py-3.5 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80 sm:px-6">
           <div className="flex items-center gap-3">
-            <IconButton icon="fi fi-rr-menu-burger" onClick={() => setMobileOpen(true)} label="Menu" className="lg:hidden" />
+            <IconButton icon="fi fi-rr-menu-burger" onClick={openMobileDrawer} label="Menu" className="lg:hidden" />
             <div>
               <h1 className="text-base font-bold text-slate-800 dark:text-slate-100 sm:text-lg">{findPageTitle(location.pathname)}</h1>
               <p className="hidden text-xs text-slate-400 sm:block">{settings.businessName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <button onClick={openMenuSearch} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-100 px-2.5 text-slate-600 transition-all duration-200 hover:bg-slate-200 active:scale-95 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 sm:px-3" aria-label="Cari menu">
+              <i className="fi fi-rr-search" />
+              <span className="hidden text-sm font-semibold sm:inline">Cari menu</span>
+            </button>
             <IconButton icon={dark ? "fi fi-rr-brightness" : "fi fi-rr-moon"} onClick={toggle} label="Ubah tema" />
             <Dropdown
               trigger={
@@ -232,8 +337,8 @@ export function MainLayout({ children }: { children: ReactNode }) {
             />
           </div>
         </header>
-        <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6">
-          <div key={location.pathname} className="animate-fade-in-up mx-auto max-w-7xl">
+        <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6">
+          <div key={location.pathname} className="animate-fade-in-up mx-auto min-w-0 max-w-7xl">
             {children}
           </div>
         </main>

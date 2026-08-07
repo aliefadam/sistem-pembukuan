@@ -96,7 +96,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div>
+    <div className="min-w-0 max-w-full">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           {!hideSearch && <SearchBox value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder={searchPlaceholder} />}
@@ -112,9 +112,9 @@ export function DataTable<T>({
       </div>
 
       {/* Desktop / Tablet Table */}
-      <div className="hidden overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800 md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="hidden min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800 xl:block">
+        <div className="min-w-0 max-w-full overflow-x-auto">
+          <table className="w-full max-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-800/40">
                 {columns.map((col) => (
@@ -122,7 +122,7 @@ export function DataTable<T>({
                     key={col.key}
                     onClick={() => col.sortable && toggleSort(col.key)}
                     className={cn(
-                      "whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400",
+                      "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400",
                       col.sortable && "cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200",
                       col.className,
                     )}
@@ -167,11 +167,11 @@ export function DataTable<T>({
                     className="border-b border-slate-50 transition-colors duration-150 last:border-0 hover:bg-slate-50/70 dark:border-slate-800/60 dark:hover:bg-slate-800/30"
                   >
                     {columns.map((col) => (
-                      <td key={col.key} className={cn("whitespace-nowrap px-4 py-3.5 text-slate-700 dark:text-slate-200", col.className)}>
-                        {col.render ? col.render(row) : col.accessor(row)}
+                      <td key={col.key} className={cn("min-w-0 break-words px-4 py-3.5 align-top leading-relaxed text-slate-700 [overflow-wrap:anywhere] dark:text-slate-200", col.className)}>
+                        <div className="min-w-0 max-w-full">{col.render ? col.render(row) : col.accessor(row)}</div>
                       </td>
                     ))}
-                    {actions && <td className="px-4 py-3.5 text-right"><div className="flex justify-end gap-1">{actions(row)}</div></td>}
+                    {actions && <td className="w-px whitespace-nowrap px-4 py-3.5 text-right align-top"><div className="flex justify-end gap-1">{actions(row)}</div></td>}
                   </tr>
                 ))}
             </tbody>
@@ -183,7 +183,7 @@ export function DataTable<T>({
       </div>
 
       {/* Mobile Card List */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:hidden">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:hidden">
         {loading &&
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="rounded-2xl border border-slate-100 p-4 dark:border-slate-800">
@@ -208,9 +208,9 @@ export function DataTable<T>({
                   .map((col) => (
                     <div key={col.key} className="min-w-0">
                       <p className="text-[11px] font-medium text-slate-400">{col.header}</p>
-                      <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">
+                      <div className="min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 [overflow-wrap:anywhere] dark:text-slate-200">
                         {col.render ? col.render(row) : col.accessor(row)}
-                      </p>
+                      </div>
                     </div>
                   ))}
               </div>

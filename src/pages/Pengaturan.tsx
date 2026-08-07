@@ -217,8 +217,8 @@ export function RolePermissionPage() {
         </Card>
       </div>
       <Card noPadding>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="min-w-0 max-w-full overflow-x-auto">
+          <table className="w-full max-w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/70 text-left text-xs font-semibold uppercase text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
                 <th className="px-5 py-3">Modul</th>
@@ -229,7 +229,7 @@ export function RolePermissionPage() {
             <tbody>
               {permissions.map((p) => (
                 <tr key={p.module} className="border-b border-slate-50 last:border-0 dark:border-slate-800/60">
-                  <td className="px-5 py-3.5 font-medium text-slate-700 dark:text-slate-200">{p.module}</td>
+                  <td className="break-words px-5 py-3.5 font-medium text-slate-700 dark:text-slate-200">{p.module}</td>
                   <td className="px-5 py-3.5">
                     <Badge tone="success">Full Access</Badge>
                   </td>

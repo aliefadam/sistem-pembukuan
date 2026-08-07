@@ -12,6 +12,7 @@ export function Modal({
   children,
   footer,
   size = "md",
+  mobileSheet = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -19,34 +20,67 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
+  mobileSheet?: boolean;
 }) {
-  useEffect(() => {
-    if (open) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  const [mounted, setMounted] = useState(open);
+  const [closing, setClosing] = useState(false);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      setClosing(false);
+    } else if (mounted) {
+      setClosing(true);
+    }
+  }, [open, mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mounted, onClose]);
+
+  if (!mounted) return null;
 
   const sizes = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="animate-fade-in absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
+    <div className={cn("fixed inset-0 z-[100] flex justify-center", mobileSheet ? "items-end p-0 sm:items-center sm:p-4" : "items-center p-4")}>
+      <div className={cn("absolute inset-0 bg-slate-900/40 backdrop-blur-sm", closing ? "animate-fade-out" : "animate-fade-in")} onClick={onClose} />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onAnimationEnd={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (closing) {
+            setMounted(false);
+            setClosing(false);
+          }
+        }}
         className={cn(
-          "animate-scale-in relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900",
+          "relative flex max-h-[92dvh] min-w-0 w-full flex-col overflow-hidden bg-white shadow-2xl sm:max-h-[90dvh] dark:bg-slate-900",
+          mobileSheet ? "rounded-t-2xl sm:rounded-2xl" : "rounded-2xl",
+          closing
+            ? mobileSheet ? "animate-slide-down sm:animate-scale-out" : "animate-scale-out"
+            : mobileSheet ? "animate-slide-up sm:animate-scale-in" : "animate-scale-in",
           sizes[size],
         )}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-          <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">{title}</h3>
+        <div className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-4 py-3.5 sm:px-5 dark:border-slate-800">
+          <h3 className="min-w-0 text-base font-bold leading-snug text-slate-800 dark:text-slate-100">{title}</h3>
           <IconButton icon="fi fi-rr-cross-small" onClick={onClose} label="Tutup" />
         </div>
-        <div className="overflow-y-auto px-5 py-5">{children}</div>
-        {footer && <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-4 dark:border-slate-800">{footer}</div>}
+        <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">{children}</div>
+        {footer && <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-100 px-4 py-3 [&>*]:w-full sm:flex-row sm:items-center sm:justify-end sm:px-5 sm:py-4 sm:[&>*]:w-auto dark:border-slate-800">{footer}</div>}
       </div>
     </div>,
     document.body,
@@ -68,20 +102,47 @@ export function Drawer({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const [mounted, setMounted] = useState(open);
+  const [closing, setClosing] = useState(false);
+
   useEffect(() => {
-    if (open) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
+    if (open) {
+      setMounted(true);
+      setClosing(false);
+    } else if (mounted) {
+      setClosing(true);
+    }
+  }, [open, mounted]);
+
+  useEffect(() => {
+    if (mounted) document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [mounted]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex justify-end">
-      <div className="animate-fade-in absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="animate-slide-in-right relative flex h-full w-full max-w-md flex-col bg-white shadow-2xl dark:bg-slate-900">
+    <div className="fixed inset-0 z-[100] flex items-end">
+      <div className={cn("absolute inset-0 bg-slate-900/40 backdrop-blur-sm", closing ? "animate-fade-out" : "animate-fade-in")} onClick={onClose} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onAnimationEnd={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (closing) {
+            setMounted(false);
+            setClosing(false);
+          }
+        }}
+        className={cn(
+          "relative flex max-h-[92dvh] min-h-[40dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl dark:bg-slate-900",
+          closing ? "animate-slide-down" : "animate-slide-up",
+        )}
+      >
+        <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-slate-200 dark:bg-slate-700" />
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
           <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">{title}</h3>
           <IconButton icon="fi fi-rr-cross-small" onClick={onClose} label="Tutup" />
@@ -131,7 +192,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         createPortal(
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
             <div className="animate-fade-in absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => handle(false)} />
-            <div className="animate-scale-in relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+            <div role="alertdialog" aria-modal="true" className="animate-scale-in relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl sm:p-6 dark:bg-slate-900">
               <div
                 className={cn(
                   "flex h-12 w-12 items-center justify-center rounded-xl text-xl",
@@ -144,9 +205,9 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               </div>
               <h3 className="mt-4 text-base font-bold text-slate-800 dark:text-slate-100">{state.options.title}</h3>
               {state.options.description && (
-                <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">{state.options.description}</p>
+                <p className="mt-1.5 break-words text-sm leading-relaxed text-slate-500 dark:text-slate-400">{state.options.description}</p>
               )}
-              <div className="mt-6 flex justify-end gap-2">
+              <div className="mt-6 flex flex-col-reverse gap-2 [&>*]:w-full sm:flex-row sm:justify-end sm:[&>*]:w-auto">
                 <Button variant="outline" onClick={() => handle(false)}>
                   {state.options.cancelLabel || "Batal"}
                 </Button>

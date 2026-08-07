@@ -162,10 +162,10 @@ export function PayrollPage() {
     }
     if (editing) {
       updatePayroll(editing.id, form);
-      toast("Payroll berhasil diperbarui", "success");
+      toast(form.status === "paid" ? "Payroll dan pengeluaran gaji berhasil diperbarui" : "Payroll berhasil diperbarui", "success");
     } else {
       addPayroll(form);
-      toast("Payroll berhasil ditambahkan", "success");
+      toast(form.status === "paid" ? "Payroll dan pengeluaran gaji berhasil dicatat" : "Payroll berhasil ditambahkan", "success");
     }
     setModalOpen(false);
   }

@@ -272,7 +272,7 @@ export function BarangKeluarPage() {
       return;
     }
     addStockOut(form);
-    toast("Barang keluar berhasil dicatat", "success");
+    toast("Barang keluar dan pemasukan penjualan berhasil dicatat", "success");
     setModalOpen(false);
   }
 
@@ -329,6 +329,7 @@ export function BarangKeluarPage() {
         <div className="flex flex-col gap-4">
           <Select label="Barang" value={form.productId} onChange={(v) => setForm({ ...form, productId: v })} options={options} placeholder="Pilih barang" />
           <Input label="Qty" type="number" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
+          <Input label="Total Penjualan" disabled value={formatCurrency((products.find((p) => p.id === form.productId)?.sellPrice || 0) * form.qty)} />
           <Input label="Tanggal" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           <Textarea label="Catatan" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
         </div>

@@ -190,17 +190,17 @@ function TransactionPage({ type }: { type: TransactionType }) {
             </div>
           }
           columns={[
-            { key: "no", header: "No Transaksi", accessor: (t) => t.no, sortable: true },
-            { key: "date", header: "Tanggal", accessor: (t) => t.date, sortable: true, render: (t) => formatDate(t.date) },
+            { key: "no", header: "No Transaksi", accessor: (t) => t.no, sortable: true, className: "whitespace-nowrap" },
+            { key: "date", header: "Tanggal", accessor: (t) => t.date, sortable: true, render: (t) => formatDate(t.date), className: "whitespace-nowrap" },
             { key: "category", header: "Kategori", accessor: (t) => t.categoryName, render: (t) => <Badge tone={type === "income" ? "success" : "danger"}>{t.categoryName}</Badge> },
-            { key: "amount", header: "Nominal", accessor: (t) => t.amount, sortable: true, render: (t) => <span className="font-semibold">{formatCurrency(t.amount)}</span> },
-            { key: "description", header: "Deskripsi", accessor: (t) => t.description, hideOnMobile: true },
+            { key: "amount", header: "Nominal", accessor: (t) => t.amount, sortable: true, render: (t) => <span className="font-semibold">{formatCurrency(t.amount)}</span>, className: "whitespace-nowrap" },
+            { key: "description", header: "Deskripsi", accessor: (t) => t.description, hideOnMobile: true, className: "min-w-[14rem] max-w-md whitespace-normal" },
           ]}
           actions={(t) => (
             <>
               <IconButton icon="fi fi-rr-eye" label="Detail" onClick={() => setDetail(t)} />
-              <IconButton icon="fi fi-rr-pencil" label="Edit" onClick={() => openEdit(t)} />
-              <IconButton icon="fi fi-rr-trash" label="Hapus" variant="danger" onClick={() => handleDelete(t)} />
+              {!t.sourceType && <IconButton icon="fi fi-rr-pencil" label="Edit" onClick={() => openEdit(t)} />}
+              {!t.sourceType && <IconButton icon="fi fi-rr-trash" label="Hapus" variant="danger" onClick={() => handleDelete(t)} />}
             </>
           )}
         />
@@ -233,14 +233,15 @@ function TransactionPage({ type }: { type: TransactionType }) {
         </div>
       </Modal>
 
-      <Modal open={!!detail} onClose={() => setDetail(null)} title="Detail Transaksi">
+      <Modal open={!!detail} onClose={() => setDetail(null)} title="Detail Transaksi" mobileSheet>
         {detail && (
-          <div className="flex flex-col gap-3 text-sm">
+          <div className="flex min-w-0 flex-col text-sm">
             <Row label="No Transaksi" value={detail.no} />
             <Row label="Tanggal" value={formatDate(detail.date)} />
             <Row label="Kategori" value={detail.categoryName} />
             <Row label="Nominal" value={formatCurrency(detail.amount)} />
             <Row label="Deskripsi" value={detail.description || "-"} />
+            <Row label="Sumber" value={detail.sourceType === "stock_out" ? "Otomatis dari Barang Keluar" : detail.sourceType === "payroll" ? "Otomatis dari Payroll" : "Input manual"} />
           </div>
         )}
       </Modal>
@@ -250,9 +251,9 @@ function TransactionPage({ type }: { type: TransactionType }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-dashed border-slate-100 pb-2.5 dark:border-slate-800">
+    <div className="grid min-w-0 grid-cols-1 gap-1 border-b border-dashed border-slate-100 py-3 first:pt-0 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4 dark:border-slate-800">
       <span className="text-slate-400">{label}</span>
-      <span className="font-semibold text-slate-700 dark:text-slate-200">{value}</span>
+      <span className="min-w-0 break-words font-semibold leading-relaxed text-slate-700 sm:text-right dark:text-slate-200">{value}</span>
     </div>
   );
 }
