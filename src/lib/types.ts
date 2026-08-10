@@ -16,7 +16,7 @@ export interface Transaction {
   categoryName: string;
   amount: number;
   description: string;
-  sourceType?: "stock_out" | "payroll";
+  sourceType?: "stock_in" | "stock_out";
   sourceId?: string;
   createdAt: string;
 }
@@ -71,34 +71,6 @@ export interface StockOpname {
   diff: number;
   note: string;
   date: string;
-  createdAt: string;
-}
-
-export type EmployeeStatus = "active" | "inactive";
-
-export interface Employee {
-  id: string;
-  name: string;
-  position: string;
-  phone: string;
-  joinDate: string;
-  status: EmployeeStatus;
-  createdAt: string;
-}
-
-export type PayrollStatus = "paid" | "unpaid";
-
-export interface Payroll {
-  id: string;
-  month: string;
-  employeeId: string;
-  employeeName: string;
-  baseSalary: number;
-  bonus: number;
-  deduction: number;
-  overtime: number;
-  total: number;
-  status: PayrollStatus;
   createdAt: string;
 }
 

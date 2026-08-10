@@ -34,14 +34,6 @@ const MENU: MenuItem[] = [
     ],
   },
   {
-    label: "Karyawan",
-    icon: "fi fi-rr-users",
-    children: [
-      { label: "Data Karyawan", path: "/karyawan/data", icon: "fi fi-rr-user" },
-      { label: "Payroll", path: "/karyawan/payroll", icon: "fi fi-rr-wallet" },
-    ],
-  },
-  {
     label: "Laporan",
     icon: "fi fi-rr-chart-histogram",
     children: [
@@ -50,7 +42,6 @@ const MENU: MenuItem[] = [
       { label: "Cash Flow", path: "/laporan/cash-flow", icon: "fi fi-rr-chart-line-up" },
       { label: "Ringkasan Laba", path: "/laporan/laba", icon: "fi fi-rr-sack-dollar" },
       { label: "Stok", path: "/laporan/stok", icon: "fi fi-rr-boxes" },
-      { label: "Payroll", path: "/laporan/payroll", icon: "fi fi-rr-file-invoice-dollar" },
     ],
   },
   {
@@ -60,7 +51,7 @@ const MENU: MenuItem[] = [
       { label: "Profil Usaha", path: "/pengaturan/profil", icon: "fi fi-rr-building" },
       { label: "Pengguna", path: "/pengaturan/pengguna", icon: "fi fi-rr-user-gear" },
       { label: "Role Permission", path: "/pengaturan/role", icon: "fi fi-rr-shield-check" },
-      { label: "Backup", path: "/pengaturan/backup", icon: "fi fi-rr-cloud-upload" },
+      { label: "Backup & Data", path: "/pengaturan/backup", icon: "fi fi-rr-cloud-upload" },
       { label: "Audit Log", path: "/pengaturan/audit-log", icon: "fi fi-rr-time-past" },
     ],
   },

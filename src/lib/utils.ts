@@ -30,15 +30,15 @@ export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+export function isNonOperatingIncomeTransaction(transaction: { categoryName: string }): boolean {
+  return ["inisialisasi saldo awal", "modal pemilik"].includes(
+    transaction.categoryName.trim().toLowerCase(),
+  );
+}
+
 export function monthKey(date: string | Date = new Date()): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-export function monthLabel(key: string): string {
-  const [y, m] = key.split("-").map(Number);
-  const d = new Date(y, (m || 1) - 1, 1);
-  return new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric" }).format(d);
 }
 
 export function generateId(): string {

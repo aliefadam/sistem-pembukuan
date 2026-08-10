@@ -1,5 +1,60 @@
-import { useEffect, useRef, useState } from "react";
+import { CSSProperties, RefObject, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "../../utils/cn";
+
+const FLOATING_LAYER = "z-[300]";
+const VIEWPORT_GAP = 8;
+const MENU_GAP = 6;
+
+function useFloatingMenu(
+  open: boolean,
+  triggerRef: RefObject<HTMLElement | null>,
+  fixedWidth?: number,
+) {
+  const [style, setStyle] = useState<CSSProperties>({});
+  const [placement, setPlacement] = useState<"top" | "bottom">("bottom");
+
+  const updatePosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_GAP;
+    const spaceAbove = rect.top - VIEWPORT_GAP;
+    const placeAbove = spaceBelow < 160 && spaceAbove > spaceBelow;
+    const availableHeight = Math.max(96, Math.min(224, placeAbove ? spaceAbove - MENU_GAP : spaceBelow - MENU_GAP));
+    const width = fixedWidth ?? rect.width;
+    const preferredLeft = fixedWidth ? rect.right - width : rect.left;
+    const left = Math.min(
+      Math.max(VIEWPORT_GAP, preferredLeft),
+      Math.max(VIEWPORT_GAP, window.innerWidth - width - VIEWPORT_GAP),
+    );
+
+    setPlacement(placeAbove ? "top" : "bottom");
+    setStyle({
+      position: "fixed",
+      left,
+      width,
+      maxHeight: availableHeight,
+      ...(placeAbove
+        ? { bottom: window.innerHeight - rect.top + MENU_GAP, top: "auto" }
+        : { top: rect.bottom + MENU_GAP, bottom: "auto" }),
+    });
+  }, [fixedWidth, triggerRef]);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, updatePosition]);
+
+  return { style, placement };
+}
 
 export interface SelectOption {
   value: string;
@@ -19,11 +74,15 @@ interface SelectProps {
 export function Select({ label, value, onChange, options, placeholder = "Pilih...", error }: SelectProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const floating = useFloatingMenu(open, triggerRef);
   const selected = options.find((o) => o.value === value);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (!ref.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
@@ -34,6 +93,7 @@ export function Select({ label, value, onChange, options, placeholder = "Pilih..
       {label && <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>}
       <div className="relative">
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setOpen((o) => !o)}
           className={cn(
@@ -48,8 +108,16 @@ export function Select({ label, value, onChange, options, placeholder = "Pilih..
           </span>
           <i className={cn("fi fi-rr-angle-small-down text-sm text-slate-400 transition-transform duration-200", open && "rotate-180")} />
         </button>
-        {open && (
-          <div className="animate-scale-in absolute z-30 mt-1.5 max-h-56 w-full origin-top overflow-auto rounded-xl border border-slate-100 bg-white p-1.5 shadow-lg shadow-slate-200/60 dark:border-slate-700 dark:bg-slate-800 dark:shadow-black/30">
+        {open && createPortal(
+          <div
+            ref={menuRef}
+            style={floating.style}
+            className={cn(
+              "animate-scale-in overflow-auto rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl shadow-slate-900/15 dark:border-slate-700 dark:bg-slate-800 dark:shadow-black/40",
+              FLOATING_LAYER,
+              floating.placement === "top" ? "origin-bottom" : "origin-top",
+            )}
+          >
             {options.length === 0 && <p className="px-3 py-2 text-sm text-slate-400">Tidak ada opsi</p>}
             {options.map((opt) => (
               <button
@@ -70,7 +138,8 @@ export function Select({ label, value, onChange, options, placeholder = "Pilih..
                 {opt.label}
               </button>
             ))}
-          </div>
+          </div>,
+          document.body,
         )}
       </div>
       {error && <span className="text-xs font-medium text-red-500">{error}</span>}
@@ -89,10 +158,14 @@ interface MultiSelectProps {
 export function MultiSelect({ label, values, onChange, options, placeholder = "Pilih..." }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const floating = useFloatingMenu(open, triggerRef);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (!ref.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
@@ -107,6 +180,7 @@ export function MultiSelect({ label, values, onChange, options, placeholder = "P
       {label && <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>}
       <div className="relative">
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setOpen((o) => !o)}
           className="flex w-full flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm outline-none transition-all duration-200 focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800/60"
@@ -121,8 +195,16 @@ export function MultiSelect({ label, values, onChange, options, placeholder = "P
             );
           })}
         </button>
-        {open && (
-          <div className="animate-scale-in absolute z-30 mt-1.5 max-h-56 w-full origin-top overflow-auto rounded-xl border border-slate-100 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+        {open && createPortal(
+          <div
+            ref={menuRef}
+            style={floating.style}
+            className={cn(
+              "animate-scale-in overflow-auto rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl shadow-slate-900/15 dark:border-slate-700 dark:bg-slate-800 dark:shadow-black/40",
+              FLOATING_LAYER,
+              floating.placement === "top" ? "origin-bottom" : "origin-top",
+            )}
+          >
             {options.map((opt) => (
               <button
                 key={opt.value}
@@ -139,7 +221,8 @@ export function MultiSelect({ label, values, onChange, options, placeholder = "P
                 {values.includes(opt.value) && <i className="fi fi-rr-check text-xs" />}
               </button>
             ))}
-          </div>
+          </div>,
+          document.body,
         )}
       </div>
     </div>
@@ -156,10 +239,14 @@ interface DropdownItem {
 export function Dropdown({ trigger, items }: { trigger: React.ReactNode; items: DropdownItem[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const floating = useFloatingMenu(open, triggerRef, 176);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (!ref.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
@@ -167,9 +254,17 @@ export function Dropdown({ trigger, items }: { trigger: React.ReactNode; items: 
 
   return (
     <div className="relative inline-block" ref={ref}>
-      <div onClick={() => setOpen((o) => !o)}>{trigger}</div>
-      {open && (
-        <div className="animate-scale-in absolute right-0 z-30 mt-1.5 w-44 origin-top-right overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-lg shadow-slate-200/60 dark:border-slate-700 dark:bg-slate-800 dark:shadow-black/30">
+      <div ref={triggerRef} onClick={() => setOpen((o) => !o)}>{trigger}</div>
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          style={floating.style}
+          className={cn(
+            "animate-scale-in overflow-auto rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl shadow-slate-900/15 dark:border-slate-700 dark:bg-slate-800 dark:shadow-black/40",
+            FLOATING_LAYER,
+            floating.placement === "top" ? "origin-bottom-right" : "origin-top-right",
+          )}
+        >
           {items.map((item, i) => (
             <button
               key={i}
@@ -188,7 +283,8 @@ export function Dropdown({ trigger, items }: { trigger: React.ReactNode; items: 
               {item.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

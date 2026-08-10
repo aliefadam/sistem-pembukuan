@@ -263,6 +263,7 @@ interface CurrencyInputProps {
   error?: string;
   placeholder?: string;
   hint?: string;
+  required?: boolean;
 }
 
 export function CurrencyInput({
@@ -272,6 +273,7 @@ export function CurrencyInput({
   error,
   placeholder,
   hint,
+  required = false,
 }: CurrencyInputProps) {
   const [focused, setFocused] = useState(false);
   const display = value ? new Intl.NumberFormat("id-ID").format(value) : "";
@@ -279,7 +281,7 @@ export function CurrencyInput({
     <div className="flex flex-col gap-1.5">
       {label && (
         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-          {label}
+          {label}{required && <span className="ml-1 text-red-500" aria-hidden="true">*</span>}
         </label>
       )}
       <div className="relative">
@@ -287,6 +289,8 @@ export function CurrencyInput({
           Rp
         </span>
         <input
+          required={required}
+          aria-required={required}
           inputMode="numeric"
           value={display}
           placeholder={placeholder || "0"}

@@ -185,7 +185,6 @@ export function RolePermissionPage() {
     { module: "Pembukuan (Pemasukan/Pengeluaran)", owner: true, admin: "Tidak dapat menghapus" },
     { module: "Kategori", owner: true, admin: "Tidak dapat menghapus" },
     { module: "Stok & Barang", owner: true, admin: "Tidak dapat menghapus" },
-    { module: "Karyawan & Payroll", owner: true, admin: "Tidak dapat menghapus" },
     { module: "Laporan", owner: true, admin: "Akses penuh" },
     { module: "Pengaturan Pengguna", owner: true, admin: "Tidak dapat menghapus" },
     { module: "Backup & Restore", owner: true, admin: "Akses penuh" },
@@ -247,7 +246,7 @@ export function RolePermissionPage() {
 }
 
 export function BackupPage() {
-  const { restoreAll } = useData();
+  const { restoreAll, clearTransactionData, currentRole } = useData();
   const toast = useToast();
   const confirm = useConfirm();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -283,6 +282,23 @@ export function BackupPage() {
     if (fileRef.current) fileRef.current.value = "";
   }
 
+  async function handleClearTransactions() {
+    if (currentRole !== "owner") {
+      toast("Hanya owner yang dapat menghapus data transaksi", "danger");
+      return;
+    }
+    const ok = await confirm({
+      title: "Hapus Semua Data Transaksi",
+      description:
+        "Pemasukan, pengeluaran, barang masuk, barang keluar, dan stock opname akan dihapus permanen. Data master seperti kategori, barang, pengguna, dan profil usaha tetap dipertahankan.",
+      tone: "danger",
+      confirmLabel: "Hapus Transaksi",
+    });
+    if (!ok) return;
+    clearTransactionData();
+    toast("Seluruh data transaksi berhasil dihapus", "success");
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card>
@@ -305,6 +321,24 @@ export function BackupPage() {
         <Button className="mt-4" variant="outline" icon="fi fi-rr-upload" onClick={() => fileRef.current?.click()}>
           Pilih File Backup
         </Button>
+      </Card>
+      <Card className="border-red-100 lg:col-span-2 dark:border-red-500/20">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-xl text-red-600 dark:bg-red-500/10">
+              <i className="fi fi-rr-trash" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100">Hapus Data Transaksi</h3>
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-400">
+                Bersihkan pemasukan, pengeluaran, barang masuk, barang keluar, dan stock opname. Master kategori dan barang, pengguna, serta profil usaha tidak ikut dihapus.
+              </p>
+            </div>
+          </div>
+          <Button className="shrink-0" variant="danger" icon="fi fi-rr-trash" onClick={handleClearTransactions}>
+            Hapus Data Transaksi
+          </Button>
+        </div>
       </Card>
     </div>
   );

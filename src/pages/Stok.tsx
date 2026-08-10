@@ -11,7 +11,6 @@ import {
   Modal,
   Select,
   Textarea,
-  Switch,
   useConfirm,
   useToast,
 } from "../components/ui";
@@ -29,23 +28,24 @@ export function BarangPage() {
   const [form, setForm] = useState({
     sku: "",
     name: "",
-    categoryName: "",
     unit: "Pcs",
-    costPrice: 0,
-    sellPrice: 0,
-    minStock: 5,
-    status: "active" as "active" | "inactive",
+    price: 0,
   });
 
   function openAdd() {
     setEditing(null);
-    setForm({ sku: `SKU-${generateId().slice(0, 6).toUpperCase()}`, name: "", categoryName: "", unit: "Pcs", costPrice: 0, sellPrice: 0, minStock: 5, status: "active" });
+    setForm({
+      sku: `SKU-${generateId().slice(0, 6).toUpperCase()}`,
+      name: "",
+      unit: "Pcs",
+      price: 0,
+    });
     setModalOpen(true);
   }
 
   function openEdit(p: Product) {
     setEditing(p);
-    setForm({ sku: p.sku, name: p.name, categoryName: p.categoryName, unit: p.unit, costPrice: p.costPrice, sellPrice: p.sellPrice, minStock: p.minStock, status: p.status });
+    setForm({ sku: p.sku, name: p.name, unit: p.unit, price: p.sellPrice });
     setModalOpen(true);
   }
 
@@ -54,7 +54,21 @@ export function BarangPage() {
       toast("SKU dan nama barang wajib diisi", "warning");
       return;
     }
-    const payload = { ...form, categoryId: form.categoryName };
+    if (form.price <= 0) {
+      toast("Harga wajib diisi dan harus lebih dari nol", "warning");
+      return;
+    }
+    const payload = {
+      sku: form.sku,
+      name: form.name,
+      unit: form.unit,
+      sellPrice: form.price,
+      categoryId: editing?.categoryId || "",
+      categoryName: editing?.categoryName || "",
+      costPrice: editing?.costPrice || 0,
+      minStock: editing?.minStock || 0,
+      status: "active" as const,
+    };
     if (editing) {
       updateProduct(editing.id, payload);
       toast("Barang berhasil diperbarui", "success");
@@ -92,30 +106,22 @@ export function BarangPage() {
           emptyDescription="Tambahkan barang untuk mulai mengelola stok."
           renderCardTitle={(p) => p.name}
           renderCardSubtitle={(p) => p.sku}
-          renderCardBadge={(p) => <Badge tone={p.stock <= p.minStock ? "warning" : "success"}>{p.stock} {p.unit}</Badge>}
+          renderCardBadge={(p) => <Badge tone="success">{p.stock} {p.unit}</Badge>}
           columns={[
             { key: "sku", header: "SKU", accessor: (p) => p.sku, sortable: true },
             { key: "name", header: "Nama Barang", accessor: (p) => p.name, sortable: true },
             { key: "unit", header: "Satuan", accessor: (p) => p.unit, hideOnMobile: true },
-            { key: "cost", header: "Harga Modal", accessor: (p) => p.costPrice, render: (p) => formatCurrency(p.costPrice) },
-            { key: "sell", header: "Harga Jual", accessor: (p) => p.sellPrice, render: (p) => (p.sellPrice ? formatCurrency(p.sellPrice) : "-"), hideOnMobile: true },
+            { key: "price", header: "Harga", accessor: (p) => p.sellPrice, render: (p) => formatCurrency(p.sellPrice) },
             {
               key: "stock",
               header: "Stok",
               accessor: (p) => p.stock,
               sortable: true,
               render: (p) => (
-                <Badge tone={p.stock <= p.minStock ? "warning" : "success"}>
+                <Badge tone="success">
                   {p.stock} {p.unit}
                 </Badge>
               ),
-            },
-            {
-              key: "status",
-              header: "Status",
-              accessor: (p) => p.status,
-              render: (p) => <Badge tone={p.status === "active" ? "success" : "neutral"}>{p.status === "active" ? "Aktif" : "Nonaktif"}</Badge>,
-              hideOnMobile: true,
             },
           ]}
           actions={(p) => (
@@ -143,14 +149,8 @@ export function BarangPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input label="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
           <Input label="Nama Barang" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <Input label="Kategori Barang" value={form.categoryName} onChange={(e) => setForm({ ...form, categoryName: e.target.value })} placeholder="Contoh: Sembako" />
           <Select label="Satuan" value={form.unit} onChange={(v) => setForm({ ...form, unit: v })} options={UNITS.map((u) => ({ value: u, label: u }))} />
-          <CurrencyInput label="Harga Modal" value={form.costPrice} onChange={(v) => setForm({ ...form, costPrice: v })} />
-          <CurrencyInput label="Harga Jual (Opsional)" value={form.sellPrice} onChange={(v) => setForm({ ...form, sellPrice: v })} />
-          <Input label="Minimum Stok" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: Number(e.target.value) })} />
-          <div className="flex items-end pb-2">
-            <Switch checked={form.status === "active"} onChange={(v) => setForm({ ...form, status: v ? "active" : "inactive" })} label="Barang Aktif" />
-          </div>
+          <CurrencyInput label="Harga" value={form.price} onChange={(price) => setForm({ ...form, price })} required />
         </div>
       </Modal>
     </div>
@@ -169,9 +169,10 @@ export function BarangMasukPage() {
   const options = useProductOptions();
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ productId: "", qty: 1, costPrice: 0, date: todayISO(), note: "" });
+  const selectedProduct = products.find((product) => product.id === form.productId);
 
   function openAdd() {
-    setForm({ productId: products[0]?.id || "", qty: 1, costPrice: products[0]?.costPrice || 0, date: todayISO(), note: "" });
+    setForm({ productId: products[0]?.id || "", qty: 1, costPrice: 0, date: todayISO(), note: "" });
     setModalOpen(true);
   }
 
@@ -180,8 +181,12 @@ export function BarangMasukPage() {
       toast("Barang dan qty wajib diisi", "warning");
       return;
     }
+    if (form.costPrice <= 0) {
+      toast("Harga modal wajib diisi dan harus lebih dari nol", "warning");
+      return;
+    }
     addStockIn(form);
-    toast("Barang masuk berhasil dicatat", "success");
+    toast("Barang masuk dan pengeluaran berhasil dicatat", "success");
     setModalOpen(false);
   }
 
@@ -238,8 +243,8 @@ export function BarangMasukPage() {
       >
         <div className="flex flex-col gap-4">
           <Select label="Barang" value={form.productId} onChange={(v) => setForm({ ...form, productId: v })} options={options} placeholder="Pilih barang" />
-          <Input label="Qty" type="number" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
-          <CurrencyInput label="Harga Modal" value={form.costPrice} onChange={(v) => setForm({ ...form, costPrice: v })} />
+          <Input label={`Qty${selectedProduct ? ` (${selectedProduct.unit.toLowerCase()})` : ""}`} type="number" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
+          <CurrencyInput label="Harga Modal" value={form.costPrice} onChange={(v) => setForm({ ...form, costPrice: v })} required />
           <Input label="Tanggal" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           <Textarea label="Catatan" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
         </div>
@@ -255,6 +260,7 @@ export function BarangKeluarPage() {
   const options = useProductOptions();
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ productId: "", qty: 1, date: todayISO(), note: "" });
+  const selectedProduct = products.find((product) => product.id === form.productId);
 
   function openAdd() {
     setForm({ productId: products[0]?.id || "", qty: 1, date: todayISO(), note: "" });
@@ -328,8 +334,8 @@ export function BarangKeluarPage() {
       >
         <div className="flex flex-col gap-4">
           <Select label="Barang" value={form.productId} onChange={(v) => setForm({ ...form, productId: v })} options={options} placeholder="Pilih barang" />
-          <Input label="Qty" type="number" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
-          <Input label="Total Penjualan" disabled value={formatCurrency((products.find((p) => p.id === form.productId)?.sellPrice || 0) * form.qty)} />
+          <Input label={`Qty${selectedProduct ? ` (${selectedProduct.unit.toLowerCase()})` : ""}`} type="number" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
+          <Input label="Total Penjualan" disabled value={formatCurrency((selectedProduct?.sellPrice || 0) * form.qty)} />
           <Input label="Tanggal" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           <Textarea label="Catatan" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
         </div>

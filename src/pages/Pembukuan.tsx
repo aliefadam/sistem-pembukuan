@@ -241,7 +241,7 @@ function TransactionPage({ type }: { type: TransactionType }) {
             <Row label="Kategori" value={detail.categoryName} />
             <Row label="Nominal" value={formatCurrency(detail.amount)} />
             <Row label="Deskripsi" value={detail.description || "-"} />
-            <Row label="Sumber" value={detail.sourceType === "stock_out" ? "Otomatis dari Barang Keluar" : detail.sourceType === "payroll" ? "Otomatis dari Payroll" : "Input manual"} />
+            <Row label="Sumber" value={detail.sourceType === "stock_out" ? "Otomatis dari Barang Keluar" : detail.sourceType === "stock_in" ? "Otomatis dari Barang Masuk" : "Input manual"} />
           </div>
         )}
       </Modal>

@@ -6,8 +6,6 @@ export const STORAGE_KEYS = {
   stockIn: "bookkeeping_stock_in",
   stockOut: "bookkeeping_stock_out",
   stockOpname: "bookkeeping_stock_opname",
-  employees: "bookkeeping_employees",
-  payroll: "bookkeeping_payroll",
   users: "bookkeeping_users",
   settings: "bookkeeping_settings",
   logs: "bookkeeping_logs",

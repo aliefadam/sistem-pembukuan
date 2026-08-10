@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { useData } from "../context/DataContext";
 import { Badge, Card, EmptyState, StatisticCard } from "../components/ui";
-import { formatCurrency, formatDate, isInMonth, monthKey, todayISO } from "../lib/utils";
+import { formatCurrency, formatDate, isInMonth, isNonOperatingIncomeTransaction, monthKey, todayISO } from "../lib/utils";
 
 const PIE_COLORS = ["#2563eb", "#059669", "#f59e0b", "#dc2626", "#0284c7", "#7c3aed", "#db2777", "#65a30d"];
 
@@ -27,7 +27,9 @@ export default function Dashboard() {
 
   const incomeToday = income.filter((t) => t.date === today).reduce((s, t) => s + t.amount, 0);
   const expenseToday = expense.filter((t) => t.date === today).reduce((s, t) => s + t.amount, 0);
-  const incomeMonth = income.filter((t) => isInMonth(t.date, curMonth)).reduce((s, t) => s + t.amount, 0);
+  const incomeMonth = income
+    .filter((t) => isInMonth(t.date, curMonth) && !isNonOperatingIncomeTransaction(t))
+    .reduce((s, t) => s + t.amount, 0);
   const expenseMonth = expense.filter((t) => isInMonth(t.date, curMonth)).reduce((s, t) => s + t.amount, 0);
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
   const totalExpense = expense.reduce((s, t) => s + t.amount, 0);

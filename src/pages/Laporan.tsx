@@ -13,7 +13,7 @@ import { useData } from "../context/DataContext";
 import { Badge, Button, Card, DataTable, EmptyState, Select, StatisticCard, Tabs } from "../components/ui";
 import { useToast } from "../components/ui";
 import { exportToExcel, exportToPDF } from "../lib/exporters";
-import { formatCurrency, formatDate, isInMonth, isInYear, monthKey, monthLabel, todayISO } from "../lib/utils";
+import { formatCurrency, formatDate, isInMonth, isInYear, isNonOperatingIncomeTransaction, monthKey, todayISO } from "../lib/utils";
 import { Transaction } from "../lib/types";
 
 type Period = "harian" | "bulanan" | "tahunan";
@@ -172,7 +172,9 @@ export function CashFlowReportPage() {
 export function RingkasanLabaPage() {
   const { income, expense } = useData();
   const [period, setPeriod] = useState<Period>("bulanan");
-  const filteredIncome = useReportData(income, period);
+  const filteredIncome = useReportData(income, period).filter(
+    (transaction) => !isNonOperatingIncomeTransaction(transaction),
+  );
   const filteredExpense = useReportData(expense, period);
   const totalIn = filteredIncome.reduce((s, t) => s + t.amount, 0);
   const totalOut = filteredExpense.reduce((s, t) => s + t.amount, 0);
@@ -191,13 +193,13 @@ export function RingkasanLabaPage() {
         ]}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatisticCard label="Total Pemasukan" value={formatCurrency(totalIn)} icon="fi fi-rr-arrow-small-down" tone="success" />
+        <StatisticCard label="Pendapatan Operasional" value={formatCurrency(totalIn)} icon="fi fi-rr-arrow-small-down" tone="success" />
         <StatisticCard label="Total Pengeluaran" value={formatCurrency(totalOut)} icon="fi fi-rr-arrow-small-up" tone="danger" />
         <StatisticCard label="Estimasi Laba" value={formatCurrency(laba)} icon="fi fi-rr-sack-dollar" tone={laba >= 0 ? "primary" : "danger"} />
       </div>
       <Card>
         <div className="flex flex-col items-center gap-2 py-6 text-center">
-          <p className="text-sm font-medium text-slate-400">Estimasi Laba = Total Pemasukan - Total Pengeluaran</p>
+          <p className="text-sm font-medium text-slate-400">Estimasi Laba = Pendapatan Operasional - Total Pengeluaran</p>
           <p className={`text-3xl font-bold ${laba >= 0 ? "text-emerald-600" : "text-red-500"}`}>{formatCurrency(laba)}</p>
           <Badge tone={laba >= 0 ? "success" : "danger"}>Margin Laba {margin}%</Badge>
         </div>
@@ -295,65 +297,6 @@ export function LaporanStokPage() {
               ]}
             />
           ))}
-      </Card>
-    </div>
-  );
-}
-
-export function LaporanPayrollPage() {
-  const { payroll } = useData();
-  const [month, setMonth] = useState("");
-  const toast = useToast();
-  const monthOptions = useMemo(() => {
-    const months = Array.from(new Set(payroll.map((p) => p.month)));
-    return months.sort().reverse().map((m) => ({ value: m, label: monthLabel(m) }));
-  }, [payroll]);
-  const filtered = month ? payroll.filter((p) => p.month === month) : payroll;
-  const totalGaji = filtered.reduce((s, p) => s + p.total, 0);
-  const totalBonus = filtered.reduce((s, p) => s + p.bonus, 0);
-  const totalPotongan = filtered.reduce((s, p) => s + p.deduction, 0);
-
-  function handleExport() {
-    exportToPDF(
-      "Laporan Payroll",
-      ["Karyawan", "Bulan", "Gaji Pokok", "Bonus", "Potongan", "Total"],
-      filtered.map((p) => [p.employeeName, monthLabel(p.month), formatCurrency(p.baseSalary), formatCurrency(p.bonus), formatCurrency(p.deduction), formatCurrency(p.total)]),
-      "laporan-payroll",
-    );
-    toast("Berhasil export PDF", "success");
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div className="w-full sm:w-56">
-          <Select value={month} onChange={setMonth} options={[{ value: "", label: "Semua Bulan" }, ...monthOptions]} placeholder="Filter Bulan" />
-        </div>
-        <Button variant="outline" icon="fi fi-rr-file-pdf" onClick={handleExport}>
-          Export PDF
-        </Button>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatisticCard label="Total Gaji" value={formatCurrency(totalGaji)} icon="fi fi-rr-wallet" tone="primary" />
-        <StatisticCard label="Total Bonus" value={formatCurrency(totalBonus)} icon="fi fi-rr-gift" tone="success" />
-        <StatisticCard label="Total Potongan" value={formatCurrency(totalPotongan)} icon="fi fi-rr-minus-circle" tone="danger" />
-      </div>
-      <Card>
-        <DataTable
-          data={filtered}
-          keyExtractor={(p) => p.id}
-          searchPlaceholder="Cari karyawan..."
-          emptyTitle="Belum ada data payroll"
-          renderCardTitle={(p) => p.employeeName}
-          renderCardSubtitle={(p) => monthLabel(p.month)}
-          renderCardBadge={(p) => <Badge tone={p.status === "paid" ? "success" : "warning"}>{p.status === "paid" ? "Lunas" : "Belum Lunas"}</Badge>}
-          columns={[
-            { key: "employee", header: "Karyawan", accessor: (p) => p.employeeName },
-            { key: "month", header: "Bulan", accessor: (p) => p.month, render: (p) => monthLabel(p.month) },
-            { key: "total", header: "Total Gaji", accessor: (p) => p.total, render: (p) => formatCurrency(p.total) },
-            { key: "status", header: "Status", accessor: (p) => p.status, render: (p) => <Badge tone={p.status === "paid" ? "success" : "warning"}>{p.status === "paid" ? "Lunas" : "Belum Lunas"}</Badge> },
-          ]}
-        />
       </Card>
     </div>
   );

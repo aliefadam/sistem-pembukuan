@@ -6,10 +6,8 @@ import { MainLayout } from "./layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import { KategoriPage, PemasukanPage, PengeluaranPage } from "./pages/Pembukuan";
 import { BarangKeluarPage, BarangMasukPage, BarangPage, StockOpnamePage } from "./pages/Stok";
-import { DataKaryawanPage, PayrollPage } from "./pages/Karyawan";
 import {
   CashFlowReportPage,
-  LaporanPayrollPage,
   LaporanPemasukanPage,
   LaporanPengeluaranPage,
   LaporanStokPage,
@@ -43,14 +41,11 @@ function AppRoutes() {
         <Route path="/stok/barang-masuk" element={<BarangMasukPage />} />
         <Route path="/stok/barang-keluar" element={<BarangKeluarPage />} />
         <Route path="/stok/stock-opname" element={<StockOpnamePage />} />
-        <Route path="/karyawan/data" element={<DataKaryawanPage />} />
-        <Route path="/karyawan/payroll" element={<PayrollPage />} />
         <Route path="/laporan/pemasukan" element={<LaporanPemasukanPage />} />
         <Route path="/laporan/pengeluaran" element={<LaporanPengeluaranPage />} />
         <Route path="/laporan/cash-flow" element={<CashFlowReportPage />} />
         <Route path="/laporan/laba" element={<RingkasanLabaPage />} />
         <Route path="/laporan/stok" element={<LaporanStokPage />} />
-        <Route path="/laporan/payroll" element={<LaporanPayrollPage />} />
         <Route path="/pengaturan/profil" element={<ProfilUsahaPage />} />
         <Route path="/pengaturan/pengguna" element={<PenggunaPage />} />
         <Route path="/pengaturan/role" element={<RolePermissionPage />} />
