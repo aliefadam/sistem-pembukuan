@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 
 void createInertiaApp({
-  title: (title) => `${title} - Pembukuan Usaha`,
+  title: (title) => `Kelola Stok`,
   resolve: async (name) => {
     if (name === "App") {
       return (await import("./pages/App")).default;
