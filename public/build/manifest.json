@@ -1,0 +1,69 @@
+{
+  "_App-CusYPoQj.js": {
+    "file": "assets/App-CusYPoQj.js",
+    "name": "App",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/main.tsx",
+      "_Overlay-CPqqPF9W.js"
+    ],
+    "dynamicImports": [
+      "node_modules/html2canvas/dist/html2canvas.esm.js",
+      "node_modules/dompurify/dist/purify.es.mjs",
+      "node_modules/canvg/lib/index.es.js"
+    ]
+  },
+  "_Overlay-CPqqPF9W.js": {
+    "file": "assets/Overlay-CPqqPF9W.js",
+    "name": "Overlay",
+    "imports": [
+      "resources/js/main.tsx"
+    ]
+  },
+  "node_modules/canvg/lib/index.es.js": {
+    "file": "assets/index.es-AWWWX9Vf.js",
+    "name": "index.es",
+    "src": "node_modules/canvg/lib/index.es.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/main.tsx",
+      "_App-CusYPoQj.js",
+      "_Overlay-CPqqPF9W.js"
+    ]
+  },
+  "node_modules/dompurify/dist/purify.es.mjs": {
+    "file": "assets/purify.es-Cz4mVeUR.js",
+    "name": "purify.es",
+    "src": "node_modules/dompurify/dist/purify.es.mjs",
+    "isDynamicEntry": true
+  },
+  "node_modules/html2canvas/dist/html2canvas.esm.js": {
+    "file": "assets/html2canvas.esm-DXEQVQnt.js",
+    "name": "html2canvas.esm",
+    "src": "node_modules/html2canvas/dist/html2canvas.esm.js",
+    "isDynamicEntry": true
+  },
+  "resources/js/main.tsx": {
+    "file": "assets/main-BJY162Gc.js",
+    "name": "main",
+    "src": "resources/js/main.tsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "_App-CusYPoQj.js",
+      "resources/js/pages/Auth/Login.tsx"
+    ],
+    "css": [
+      "assets/main-a31Y7n1s.css"
+    ]
+  },
+  "resources/js/pages/Auth/Login.tsx": {
+    "file": "assets/Login-CvyWu5ZA.js",
+    "name": "Login",
+    "src": "resources/js/pages/Auth/Login.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/main.tsx",
+      "_Overlay-CPqqPF9W.js"
+    ]
+  }
+}
