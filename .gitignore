@@ -3,6 +3,10 @@ node_modules/
 
 # Production build
 dist/
+public/build/
+
+# Composer dependencies
+/vendor/
 
 # Environment variables
 .env
@@ -36,6 +40,15 @@ Desktop.ini
 # TypeScript and Vite cache
 *.tsbuildinfo
 .vite/
+
+# Laravel runtime files
+/bootstrap/cache/*.php
+/storage/*.key
+/storage/framework/
+/storage/logs/
+/database/*.sqlite
+/.phpunit.cache/
+/.phpunit.result.cache
 
 # Local Codex/agent configuration
 .agents/
