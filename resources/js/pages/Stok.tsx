@@ -344,10 +344,7 @@ export function KonversiPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Kurangi stok satuan awal, tambahkan stok satuan hasil, lalu tetapkan harga jual per satuan hasil.
-        </p>
+      <div className="flex justify-end">
         <Button icon="fi fi-rr-plus" onClick={openAdd} disabled={convertibleProducts.length === 0}>
           Catat Konversi
         </Button>
