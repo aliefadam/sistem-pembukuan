@@ -4,6 +4,7 @@ node_modules/
 # Production build
 dist/
 # public/build/
+/public/hot
 
 # Composer dependencies
 /vendor/

@@ -77,6 +77,9 @@ Service worker hanya menyimpan shell offline dan aset build aplikasi; halaman
 terautentikasi serta data pembukuan tidak disimpan di cache browser. Aplikasi
 memerlukan koneksi internet untuk membaca maupun menyimpan data. Instalasi PWA
 membutuhkan HTTPS pada server (kecuali localhost untuk pengembangan).
+Sebelum deploy, jalankan `npm run build`, pastikan `APP_ENV=production`, dan
+jangan unggah file `public/hot` dari lingkungan development. Laravel memakai
+file hot tersebut untuk memilih dev server; file itu tidak boleh ada di hosting.
 
 ## Migration dan relasi database
 
