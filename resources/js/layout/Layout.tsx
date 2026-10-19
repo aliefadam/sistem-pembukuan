@@ -4,7 +4,12 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../utils/cn";
 import { useTheme } from "../context/ThemeContext";
 import { useData } from "../context/DataContext";
-import { Dropdown, IconButton } from "../components/ui";
+import { Button, Dropdown, IconButton, Modal } from "../components/ui";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
 
 interface MenuItem {
   label: string;
@@ -30,6 +35,7 @@ const MENU: MenuItem[] = [
     children: [
       { label: "Barang", path: "/stok/barang", icon: "fi fi-rr-shopping-basket" },
       { label: "Barang Masuk", path: "/stok/barang-masuk", icon: "fi fi-rr-down-from-bracket" },
+      { label: "Konversi", path: "/stok/konversi", icon: "fi fi-rr-refresh" },
       { label: "Barang Keluar", path: "/stok/barang-keluar", icon: "fi fi-rr-up-from-bracket" },
       { label: "Stock Opname", path: "/stok/stock-opname", icon: "fi fi-rr-list-check" },
     ],
@@ -186,8 +192,36 @@ export function MainLayout({ children }: { children: ReactNode }) {
   const [mobileClosing, setMobileClosing] = useState(false);
   const [menuSearchOpen, setMenuSearchOpen] = useState(false);
   const [menuQuery, setMenuQuery] = useState("");
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installHelpOpen, setInstallHelpOpen] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  useEffect(() => {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    setIsInstalled(standalone);
+
+    function handleBeforeInstallPrompt(event: Event) {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    }
+
+    function handleAppInstalled() {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    }
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
 
   const menuResults = useMemo(() => {
     const query = menuQuery.trim().toLowerCase();
@@ -212,6 +246,23 @@ export function MainLayout({ children }: { children: ReactNode }) {
 
   function closeMobileDrawer() {
     if (mobileOpen) setMobileClosing(true);
+  }
+
+  async function installApp() {
+    if (!installPrompt) {
+      setInstallHelpOpen(true);
+      return;
+    }
+
+    try {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      if (choice.outcome === "accepted") setIsInstalled(true);
+      setInstallPrompt(null);
+    } catch (error) {
+      console.error("Prompt instalasi aplikasi gagal:", error);
+      setInstallHelpOpen(true);
+    }
   }
 
   useEffect(() => {
@@ -311,6 +362,18 @@ export function MainLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            {!isInstalled && (
+              <Button
+                size="sm"
+                variant="outline"
+                icon="fi fi-rr-download"
+                onClick={() => void installApp()}
+                aria-label="Download aplikasi"
+                className="h-9 w-9 shrink-0 px-0 sm:w-auto sm:px-3"
+              >
+                <span className="hidden sm:inline">Download aplikasi</span>
+              </Button>
+            )}
             <button onClick={openMenuSearch} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-100 px-2.5 text-slate-600 transition-all duration-200 hover:bg-slate-200 active:scale-95 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 sm:px-3" aria-label="Cari menu">
               <i className="fi fi-rr-search" />
               <span className="hidden text-sm font-semibold sm:inline">Cari menu</span>
@@ -336,6 +399,34 @@ export function MainLayout({ children }: { children: ReactNode }) {
           </div>
         </main>
       </div>
+      <Modal
+        open={installHelpOpen}
+        onClose={() => setInstallHelpOpen(false)}
+        title="Download aplikasi"
+        footer={<Button onClick={() => setInstallHelpOpen(false)}>Mengerti</Button>}
+        size="sm"
+      >
+        <div className="flex flex-col gap-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+          {isIOS ? (
+            <>
+              <p>Untuk memasang aplikasi di iPhone atau iPad:</p>
+              <ol className="list-decimal space-y-1 pl-5">
+                <li>Buka halaman ini menggunakan Safari.</li>
+                <li>Tekan tombol Bagikan.</li>
+                <li>Pilih <strong className="text-slate-800 dark:text-slate-100">Tambahkan ke Layar Utama</strong>, lalu tekan Tambahkan.</li>
+              </ol>
+            </>
+          ) : (
+            <>
+              <p>Jika prompt pemasangan tidak muncul:</p>
+              <ol className="list-decimal space-y-1 pl-5">
+                <li>Buka aplikasi melalui HTTPS di Chrome atau browser yang mendukung PWA.</li>
+                <li>Buka menu browser, lalu pilih <strong className="text-slate-800 dark:text-slate-100">Install app</strong> atau <strong className="text-slate-800 dark:text-slate-100">Add to Home screen</strong>.</li>
+              </ol>
+            </>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

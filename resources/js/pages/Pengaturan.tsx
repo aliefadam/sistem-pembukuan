@@ -14,7 +14,7 @@ import {
   useToast,
 } from "../components/ui";
 import { AppUser } from "../lib/types";
-import { exportAllData, restoreAllData } from "../lib/storage";
+import { api } from "../Services/api";
 import { formatDate, downloadFile } from "../lib/utils";
 
 export function ProfilUsahaPage() {
@@ -246,15 +246,24 @@ export function RolePermissionPage() {
 }
 
 export function BackupPage() {
-  const { restoreAll, clearTransactionData, currentRole } = useData();
+  const { restoreAll, clearTransactionData, flushData, currentRole } = useData();
   const toast = useToast();
   const confirm = useConfirm();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function handleBackup() {
-    const data = exportAllData();
-    downloadFile(`backup-pembukuan-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2), "application/json");
-    toast("Backup berhasil diunduh", "success");
+  async function handleBackup() {
+    try {
+      await flushData();
+      const response = await api.get<{ data: Record<string, unknown> }>("/data/backup");
+      downloadFile(
+        `backup-pembukuan-${new Date().toISOString().slice(0, 10)}.json`,
+        JSON.stringify(response.data.data, null, 2),
+        "application/json",
+      );
+      toast("Backup database berhasil diunduh", "success");
+    } catch {
+      toast("Backup gagal diambil dari database", "danger");
+    }
   }
 
   async function handleRestoreFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -270,14 +279,26 @@ export function BackupPage() {
       if (fileRef.current) fileRef.current.value = "";
       return;
     }
-    const text = await file.text();
+    let data: unknown;
     try {
-      const data = JSON.parse(text);
-      restoreAllData(data);
-      restoreAll(data);
+      data = JSON.parse(await file.text());
+    } catch {
+      toast("File backup bukan JSON yang valid", "danger");
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+
+    if (typeof data !== "object" || data === null || Array.isArray(data)) {
+      toast("Format file backup tidak valid", "danger");
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+
+    try {
+      await restoreAll(data as Record<string, unknown>);
       toast("Data berhasil direstore", "success");
     } catch {
-      toast("File backup tidak valid", "danger");
+      toast("Data backup gagal disimpan ke database", "danger");
     }
     if (fileRef.current) fileRef.current.value = "";
   }
@@ -306,7 +327,7 @@ export function BackupPage() {
           <i className="fi fi-rr-cloud-upload" />
         </div>
         <h3 className="mt-4 font-bold text-slate-800 dark:text-slate-100">Backup Data</h3>
-        <p className="mt-1 text-sm text-slate-400">Unduh seluruh data LocalStorage menjadi file JSON sebagai cadangan.</p>
+        <p className="mt-1 text-sm text-slate-400">Unduh seluruh data dari database menjadi file JSON sebagai cadangan.</p>
         <Button className="mt-4" icon="fi fi-rr-download" onClick={handleBackup}>
           Backup Sekarang
         </Button>

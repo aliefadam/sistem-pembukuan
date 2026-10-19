@@ -23,6 +23,13 @@ export interface Transaction {
 
 export type ProductStatus = "active" | "inactive";
 
+export interface ConvertedStockBalance {
+  unit: string;
+  stock: number;
+  costPrice: number;
+  sellPrice: number;
+}
+
 export interface Product {
   id: string;
   sku: string;
@@ -34,6 +41,13 @@ export interface Product {
   sellPrice: number;
   minStock: number;
   stock: number;
+  convertedStock: Record<string, ConvertedStockBalance>;
+  portionEnabled?: boolean;
+  portionStock?: number;
+  portionsPerPack?: number;
+  sellPricePerPortion?: number;
+  sellPricePerPack?: number;
+  portionCostPrice?: number;
   status: ProductStatus;
   createdAt: string;
 }
@@ -45,6 +59,7 @@ export interface StockIn {
   productName: string;
   qty: number;
   costPrice: number;
+  totalCost?: number;
   date: string;
   note: string;
   createdAt: string;
@@ -56,6 +71,27 @@ export interface StockOut {
   productId: string;
   productName: string;
   qty: number;
+  unit?: string;
+  portionQty?: number;
+  totalPrice?: number;
+  date: string;
+  note: string;
+  createdAt: string;
+}
+
+export interface StockConversion {
+  id: string;
+  no: string;
+  productId: string;
+  productName: string;
+  fromQty: number;
+  fromUnit: string;
+  toQty: number;
+  toUnit: string;
+  inputCost: number;
+  outputCost: number;
+  sellPrice: number;
+  outputSellValue: number;
   date: string;
   note: string;
   createdAt: string;

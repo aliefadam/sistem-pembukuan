@@ -5,17 +5,17 @@ Halaman pembukuan yang sudah ada tetap digunakan; file React dipindahkan ke
 `resources/js` dan styling Tailwind dipertahankan.
 
 > **Status migrasi:** routing Laravel, autentikasi session, schema database,
-> model, factory, seeder, dan halaman login sudah tersedia. Migrasi data dan
-> operasi CRUD dari `DataContext` ke database/API belum selesai. Data halaman
-> bisnis saat ini masih dibaca dan disimpan oleh `localStorage`; jangan gunakan
-> tahap ini untuk production atau menghapus data browser lama.
+> model, factory, seeder, halaman login, serta penyimpanan data bisnis ke
+> database sudah tersedia. Semua perubahan dari halaman bisnis disimpan melalui
+> API Laravel ke tabel `bookkeeping_data`. Backup JSON diunduh dari database dan
+> restore JSON menulis kembali ke database.
 
 ## Struktur dan alur request
 
 ```text
 Browser
   -> Laravel web routes (auth)
-  -> AppController
+  -> AppController / API data
   -> Inertia response (resources/views/app.blade.php)
   -> React entry (resources/js/main.tsx)
   -> halaman React dan layout yang sudah ada
@@ -38,6 +38,7 @@ melewati middleware autentikasi.
 | GET | `/pembukuan/kategori` | `pembukuan.kategori` | `auth` |
 | GET | `/stok/barang` | `stok.barang` | `auth` |
 | GET | `/stok/barang-masuk` | `stok.barang-masuk` | `auth` |
+| GET | `/stok/konversi` | `stok.konversi` | `auth` |
 | GET | `/stok/barang-keluar` | `stok.barang-keluar` | `auth` |
 | GET | `/stok/stock-opname` | `stok.stock-opname` | `auth` |
 | GET | `/laporan/pemasukan` | `laporan.pemasukan` | `auth` |
@@ -51,8 +52,9 @@ melewati middleware autentikasi.
 | GET | `/pengaturan/backup` | `pengaturan.backup` | `auth` |
 | GET | `/pengaturan/audit-log` | `pengaturan.audit-log` | `auth` |
 
-Lihat `php artisan route:list` untuk daftar route terkini. API CRUD untuk data
-usaha belum tersedia.
+Lihat `php artisan route:list` untuk daftar route terkini. API penyimpanan data
+usaha tersedia di `GET /data`, `PUT /data`, dan `POST /data/migrate`.
+`GET /data/backup` menyediakan data database untuk ekspor JSON.
 
 ## Middleware
 
@@ -60,6 +62,21 @@ usaha belum tersedia.
 - `auth`: melindungi seluruh route aplikasi bisnis.
 - `guest`: membatasi route login untuk pengguna yang belum masuk.
 - `throttle:6,1`: membatasi percobaan HTTP login.
+
+## Progressive Web App
+
+Aplikasi dapat dipasang dari browser Android maupun iOS melalui manifest,
+service worker, dan ikon aplikasi. Di Android, gunakan prompt atau menu instalasi
+browser atau tombol **Download aplikasi** pada topbar; di iPhone/iPad, tekan
+tombol tersebut lalu ikuti petunjuk Safari untuk memilih **Add to Home Screen**.
+Saat dibuka, aplikasi menampilkan splash/loading screen bermerek. Jika koneksi
+internet terputus, aplikasi menampilkan halaman offline dan tombol untuk
+mencoba kembali.
+
+Service worker hanya menyimpan shell offline dan aset build aplikasi; halaman
+terautentikasi serta data pembukuan tidak disimpan di cache browser. Aplikasi
+memerlukan koneksi internet untuk membaca maupun menyimpan data. Instalasi PWA
+membutuhkan HTTPS pada server (kecuali localhost untuk pengembangan).
 
 ## Migration dan relasi database
 
@@ -73,6 +90,23 @@ Migration `2026_10_12_000001_create_bookkeeping_tables` menambahkan:
 - `business_settings`
 - `audit_logs` (pengguna nullable)
 
+Migration `2026_10_18_000001_create_bookkeeping_data_table` menambahkan
+`bookkeeping_data`, yang menyimpan seluruh state halaman bisnis dalam kolom
+JSON. Ini mencakup transaksi, kategori, barang, riwayat stok masuk/keluar,
+konversi satuan, pengguna aplikasi, profil usaha, dan audit log. Akun autentikasi
+tetap dikelola pada tabel `users`.
+
+Gunakan menu **Stok → Konversi** untuk mengurangi sejumlah stok pada satuan awal
+dan mencatat jumlah hasil dalam satuan tujuan, misalnya mengonversi 1 kg ikan
+menjadi 3 potong. Sisa stok pada satuan awal tetap tersedia. Setiap satuan hasil
+memiliki harga jual sendiri; konversi tambahan ke satuan hasil yang sama
+digabung dengan rata-rata tertimbang. Barang keluar hanya dapat dijual memakai
+satuan yang memiliki stok, dan penjualan mengurangi saldo satuan tersebut.
+
+Saat mencatat barang masuk, isi kuantitas dan **total harga modal pembelian**
+(misalnya 300 kg ikan dori dengan total modal Rp20.000.000). Aplikasi menghitung
+biaya rata-rata per satuan untuk penilaian stok dan konversi.
+
 Foreign key transaksi/produk ke kategori memakai `SET NULL`; riwayat stok
 membatasi penghapusan produk; referensi pengguna pada audit log memakai
 `SET NULL`. Kolom tanggal, status, SKU, tipe/kategori, dan nomor transaksi
@@ -84,10 +118,9 @@ Model: `User`, `Category`, `Transaction`, `Product`, `StockIn`, `StockOut`,
 `StockOpname`, `BusinessSetting`, dan `AuditLog`. Model utama memiliki factory
 dan relasi Eloquent.
 
-**Service, repository, policy, resource, Form Request CRUD, dan API resource
-belum diimplementasikan.** Perilaku CRUD serta business logic halaman React
-masih berada di `resources/js/context/DataContext.tsx`; bagian ini merupakan
-pekerjaan migrasi berikutnya sesuai `migrasi.md`.
+Perilaku CRUD dan business logic tetap berada di
+`resources/js/context/DataContext.tsx`; perubahan data disimpan pada snapshot
+database melalui API Laravel yang dilindungi autentikasi session.
 
 ## Instalasi lokal
 
@@ -111,8 +144,11 @@ pekerjaan migrasi berikutnya sesuai `migrasi.md`.
 6. Buka `/login` menggunakan email dan kata sandi admin dari `.env`.
 
 Tidak ada akun dengan kata sandi default. `db:seed` akan berhenti dengan pesan
-jelas jika kredensial admin belum diisi. Data `localStorage` lama tidak
-diimpor otomatis; ekspor/backup data browser sebelum perpindahan data kelak.
+jelas jika kredensial admin belum diisi. Pada pembukaan pertama setelah update,
+data pembukuan lama di browser digabung otomatis dengan data database (data
+database yang sudah ada tetap diutamakan untuk ID yang sama), lalu data
+pembukuan di browser dihapus setelah impor berhasil. Backup JSON lama juga
+dapat dipulihkan melalui halaman **Backup & Data**.
 
 ## Environment variable
 

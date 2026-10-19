@@ -2,6 +2,12 @@ import { createInertiaApp } from "@inertiajs/react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  void navigator.serviceWorker.register("/sw.js").catch((error: unknown) => {
+    console.error("Service worker gagal didaftarkan:", error);
+  });
+}
+
 void createInertiaApp({
   title: (title) => `Kelola Stok`,
   resolve: async (name) => {

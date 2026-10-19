@@ -6,47 +6,36 @@ export const STORAGE_KEYS = {
   stockIn: "bookkeeping_stock_in",
   stockOut: "bookkeeping_stock_out",
   stockOpname: "bookkeeping_stock_opname",
+  stockConversions: "bookkeeping_stock_conversions",
+  legacyStockCuts: "bookkeeping_stock_cuts",
   users: "bookkeeping_users",
   settings: "bookkeeping_settings",
   logs: "bookkeeping_logs",
-  theme: "bookkeeping_theme",
 } as const;
 
-export function loadData<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-export function saveData<T>(key: string, value: T): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // ignore quota errors
-  }
-}
-
-export function exportAllData(): Record<string, unknown> {
+export function readLegacyData(): Record<string, unknown> | null {
   const data: Record<string, unknown> = {};
   Object.values(STORAGE_KEYS).forEach((key) => {
     const raw = localStorage.getItem(key);
-    if (raw) {
-      try {
-        data[key] = JSON.parse(raw);
-      } catch {
-        data[key] = raw;
-      }
+    if (raw === null) return;
+
+    try {
+      data[key] = JSON.parse(raw) as unknown;
+    } catch {
+      throw new Error(`Data lama "${key}" tidak dapat dibaca. Unduh backup JSON sebelum mencoba lagi.`);
     }
   });
-  return data;
+
+  return Object.keys(data).length > 0 ? data : null;
 }
 
-export function restoreAllData(data: Record<string, unknown>): void {
-  Object.entries(data).forEach(([key, value]) => {
-    localStorage.setItem(key, JSON.stringify(value));
-  });
+export function removeLegacyData(): void {
+  Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+  [
+    "bookkeeping_theme",
+    "bookkeeping_production",
+    "bookkeeping_employees",
+    "bookkeeping_payroll",
+    "bookkeeping_legacy_demo_cleanup_v1",
+  ].forEach((key) => localStorage.removeItem(key));
 }
