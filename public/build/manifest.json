@@ -1,11 +1,11 @@
 {
-  "_App-D1mLD0UH.js": {
-    "file": "assets/App-D1mLD0UH.js",
+  "_App-BvLdYFsW.js": {
+    "file": "assets/App-BvLdYFsW.js",
     "name": "App",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/main.tsx",
-      "_Overlay-M2H2odzO.js"
+      "_Overlay-BQizj1zt.js"
     ],
     "dynamicImports": [
       "node_modules/html2canvas/dist/html2canvas.esm.js",
@@ -13,22 +13,22 @@
       "node_modules/canvg/lib/index.es.js"
     ]
   },
-  "_Overlay-M2H2odzO.js": {
-    "file": "assets/Overlay-M2H2odzO.js",
+  "_Overlay-BQizj1zt.js": {
+    "file": "assets/Overlay-BQizj1zt.js",
     "name": "Overlay",
     "imports": [
       "resources/js/main.tsx"
     ]
   },
   "node_modules/canvg/lib/index.es.js": {
-    "file": "assets/index.es-B_4ESAz6.js",
+    "file": "assets/index.es-DFe77gMx.js",
     "name": "index.es",
     "src": "node_modules/canvg/lib/index.es.js",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/main.tsx",
-      "_App-D1mLD0UH.js",
-      "_Overlay-M2H2odzO.js"
+      "_App-BvLdYFsW.js",
+      "_Overlay-BQizj1zt.js"
     ]
   },
   "node_modules/dompurify/dist/purify.es.mjs": {
@@ -44,26 +44,26 @@
     "isDynamicEntry": true
   },
   "resources/js/main.tsx": {
-    "file": "assets/main--riKt8KA.js",
+    "file": "assets/main-CMQbdsFy.js",
     "name": "main",
     "src": "resources/js/main.tsx",
     "isEntry": true,
     "dynamicImports": [
-      "_App-D1mLD0UH.js",
+      "_App-BvLdYFsW.js",
       "resources/js/pages/Auth/Login.tsx"
     ],
     "css": [
-      "assets/main-a31Y7n1s.css"
+      "assets/main-CBV4vX6l.css"
     ]
   },
   "resources/js/pages/Auth/Login.tsx": {
-    "file": "assets/Login-DjTO3-G-.js",
+    "file": "assets/Login-u3SQax5T.js",
     "name": "Login",
     "src": "resources/js/pages/Auth/Login.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/main.tsx",
-      "_Overlay-M2H2odzO.js"
+      "_Overlay-BQizj1zt.js"
     ]
   }
 }
