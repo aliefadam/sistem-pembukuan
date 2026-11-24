@@ -19,6 +19,7 @@ import { formatCurrency, formatDate, generateId, todayISO } from "../lib/utils";
 import { getConvertedBalance, getProductUnits, normalizeUnit } from "../lib/inventory";
 
 const UNITS = ["Pcs", "Kg", "Liter", "Box", "Pack", "Unit", "Meter", "Lusin"];
+const CONVERSION_UNITS = ["Pcs", "Kg", "Box", "Pack", "Unit", "Lusin", "Potong", "Slice"];
 
 export function BarangPage() {
   const { products, addProduct, updateProduct, deleteProduct, currentRole } = useData();
@@ -391,7 +392,7 @@ export function KonversiPage() {
             }} options={convertibleProducts.map((product) => ({ value: product.id, label: product.name }))} placeholder="Pilih barang" />
             <Select label="Dari satuan" value={form.fromUnit} onChange={(fromUnit) => setForm({ ...form, fromUnit })} options={sourceUnits} placeholder="Pilih satuan stok" />
             <Input label="Jumlah satuan awal" type="number" min={0.001} step="any" value={form.fromQty} onChange={(e) => setForm({ ...form, fromQty: Number(e.target.value) })} />
-            <Select label="Konversi ke satuan" value={form.toUnit} onChange={(toUnit) => setForm({ ...form, toUnit })} options={UNITS.map((unit) => ({ value: unit, label: unit }))} placeholder="Pilih satuan hasil" />
+            <Select label="Konversi ke satuan" value={form.toUnit} onChange={(toUnit) => setForm({ ...form, toUnit })} options={CONVERSION_UNITS.map((unit) => ({ value: unit, label: unit }))} placeholder="Pilih satuan hasil" />
             <Input label="Jumlah hasil konversi" type="number" min={0.001} step="any" value={form.toQty} onChange={(e) => setForm({ ...form, toQty: Number(e.target.value) })} />
             <CurrencyInput label="Harga jual per satuan hasil" value={form.sellPrice} onChange={(sellPrice) => setForm({ ...form, sellPrice })} required />
             <Input label="Tanggal" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
